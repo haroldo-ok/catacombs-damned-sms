@@ -1,0 +1,9 @@
+symbols catacombs.noi
+run 120
+hold 1
+waituntil gameState == 1 1200 w1
+echo reached EnteringLevel - now KEEP holding button 1, like a player would
+run 6000
+print gameState w1
+print menuState
+expect gameState == 2 w1

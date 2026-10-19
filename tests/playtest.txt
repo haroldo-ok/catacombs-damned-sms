@@ -1,0 +1,147 @@
+# ---------------------------------------------------------------------------
+# Catacombs of the Damned! (SMS) - automated playtest
+#
+# The renderer is heavy: one game frame costs ~90 video frames, so every input
+# is HELD for long enough that several game loop iterations observe it, and
+# every waituntil is sized in video frames with plenty of slack.
+#
+# Player struct layout (src/player.h):
+#   +0  x (s16)   +2  y (s16)   +4  angle (u8)   +5 velocityX  +7 velocityY
+#   +9  angularVelocity  +10 shakeTime  +11 damageTime  +12 reloadTime
+#   +13 hp (u8)   +14 mana (u8)
+#
+# Game states (src/game.h): 0 Menu  1 EnteringLevel  2 InGame  3 GameOver
+#                           4 FadeOut
+# ---------------------------------------------------------------------------
+symbols catacombs.noi
+
+echo [1] boot: VDP on, title screen drawn, state = Menu
+run 120
+expectvdp display 1
+expectcolors 3
+expect gameState == 0 w1
+expect gameFloor == 1 w1
+screenshot shots/00_title.ppm
+
+echo [2] menu: DOWN moves the cursor to the Sound entry, button toggles audio
+hold down
+run 150
+hold none
+run 150
+expect menuState == 1
+hold 1
+run 150
+hold none
+run 150
+expect audioEnabled == 0 w1
+hold 1
+run 150
+hold none
+run 150
+expect audioEnabled == 1 w1
+screenshot shots/01_menu_sound.ppm
+
+echo [3] back to Start and begin the game
+hold up
+run 150
+hold none
+run 150
+expect menuState == 0
+hold 1
+waituntil gameState == 1 900 w1
+hold none
+
+echo [4] deterministic level: pin the RNG, then generate and enter floor 1
+poke randState 4919
+waituntil gameState == 2 9000 w1
+expect gameFloor == 1 w1
+expect player+13 == 100 w1
+expect player+14 == 100 w1
+run 400
+expectvdp display 1
+expectcolors 3
+screenshot shots/02_floor1.ppm
+
+echo [5] the dungeon really was generated (entrance cell (1,1) == CellType_Entrance)
+# cell (1,1) is index 33 -> high nibble of mapLevel[16]; the low nibble is
+# cell (1,0), which is always the BrickWall border: (3 << 4) | 13 == 61
+expect mapLevel+16 == 61 w1
+print blitTileCount
+print logicTicksPerFrame w1
+
+echo [6] movement: holding UP walks the player forward (and stays in the map)
+expect player == 384 s16
+hold up
+run 1500
+hold none
+run 300
+expect player > 400 s16
+expect player < 8192 s16
+expect player+2 < 6144 s16
+print blitTileCount
+screenshot shots/03_walked.ppm
+
+echo [7] turning: holding RIGHT spins the camera
+poke player+4 32 w1
+hold right
+run 1200
+hold none
+run 300
+expect player+4 != 32 w1
+
+echo [8] firing costs mana and spawns a projectile
+poke player+14 100 w1
+hold 1
+run 900
+hold none
+run 300
+expect player+14 < 100 w1
+screenshot shots/04_fired.ppm
+
+echo [9] taking damage
+poke player+13 40 w1
+run 60
+expect player+13 == 40 w1
+
+echo [10] death -> fade out -> game over screen
+poke player+13 0 w1
+waituntil gameState == 4 3000 w1
+waituntil gameState == 3 9000 w1
+run 400
+expectvdp display 1
+expectcolors 3
+screenshot shots/05_gameover.ppm
+
+echo [11] game over returns to the title on a button press
+# the game over screen enforces a 30 game-frame minimum before it listens
+run 3500
+hold 1
+run 900
+hold none
+waituntil gameState == 0 6000 w1
+run 300
+expectcolors 3
+screenshot shots/06_back_to_title.ppm
+
+echo [12] second run reaches floor 2 through the exit stairs
+hold 1
+run 300
+hold none
+# loading time depends on the seed, so by now the game may already be in play -
+# seed the RNG for the floor 2 generation and just wait for the in-game state.
+poke randState 4919
+waituntil gameState == 2 9000 w1
+expect gameFloor == 1 w1
+poke player 7552 s16
+poke player+2 5504 s16
+waituntil gameFloor == 2 6000 w1
+waituntil gameState == 2 12000 w1
+expect gameFloor == 2 w1
+expect player+13 > 0 w1
+run 400
+expectvdp display 1
+screenshot shots/07_floor2.ppm
+
+echo [13] VRAM writes stayed inside the hardware pacing limit
+expectpace 0
+spmin

@@ -1,0 +1,51 @@
+# Deterministic speed benchmark: how many video frames (1/60 s) does it take to
+# render N frames of a fixed scene?  Logic is frozen and the player is poked,
+# so the only variable is renderer speed.  Lower is better.
+symbols catacombs.noi
+run 120
+hold 1
+run 60
+hold none
+poke randState 4919
+waituntil gameState == 2 9000 w1
+poke freezeLogic 1
+
+echo scene A: entrance, 45 degrees
+poke player 384 s16
+poke player+2 384 s16
+poke player+4 32 w1
+poke globalRenderFrame 0
+waituntil globalRenderFrame == 1 900 w1
+poke vblankCounter 0 w2
+waituntil globalRenderFrame == 11 900 w1
+print vblankCounter w2
+
+echo scene B: open room facing north
+poke player 1024 s16
+poke player+2 700 s16
+poke player+4 64 w1
+poke globalRenderFrame 0
+waituntil globalRenderFrame == 1 900 w1
+poke vblankCounter 0 w2
+waituntil globalRenderFrame == 11 900 w1
+print vblankCounter w2
+
+echo scene C: close to a wall
+poke player 1300 s16
+poke player+2 1300 s16
+poke player+4 96 w1
+poke globalRenderFrame 0
+waituntil globalRenderFrame == 1 900 w1
+poke vblankCounter 0 w2
+waituntil globalRenderFrame == 11 900 w1
+print vblankCounter w2
+
+echo scene D: far corner
+poke player 6000 s16
+poke player+2 4000 s16
+poke player+4 160 w1
+poke globalRenderFrame 0
+waituntil globalRenderFrame == 1 900 w1
+poke vblankCounter 0 w2
+waituntil globalRenderFrame == 11 900 w1
+print vblankCounter w2

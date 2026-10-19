@@ -1,0 +1,52 @@
+# Pixel-exact render regression.
+#
+# Any *pure* optimisation must leave these five frames byte-identical.  The
+# world is frozen (freezeLogic) the moment floor 1 is ready and the player is
+# then poked to fixed positions, so the output depends only on the map (pinned
+# seed) and the renderer - never on how many frames per second the build gets.
+# Screenshots are taken on a fixed render count, not a fixed video frame.
+symbols catacombs.noi
+run 120
+screenshot shots/g0_title.ppm
+hold 1
+run 60
+hold none
+poke randState 4919
+waituntil gameState == 2 9000 w1
+poke freezeLogic 1
+poke globalRenderFrame 0
+
+# entrance, looking down the 45 degree diagonal
+poke player 384 s16
+poke player+2 384 s16
+poke player+4 32 w1
+waituntil globalRenderFrame == 3 900 w1
+screenshot shots/g1_enter.ppm
+
+# deeper in the room, facing east
+poke player 1024 s16
+poke player+2 700 s16
+poke player+4 0 w1
+waituntil globalRenderFrame == 6 900 w1
+screenshot shots/g2_walk.ppm
+
+# same spot, facing north - different wall set, tests the texture mapper
+poke player 1024 s16
+poke player+2 700 s16
+poke player+4 64 w1
+waituntil globalRenderFrame == 9 900 w1
+screenshot shots/g3_turn.ppm
+
+# close to a wall: maximum wall height, worst case for the column loop
+poke player 1300 s16
+poke player+2 1300 s16
+poke player+4 96 w1
+waituntil globalRenderFrame == 12 900 w1
+screenshot shots/g4_near.ppm
+
+# far corner of the map
+poke player 6000 s16
+poke player+2 4000 s16
+poke player+4 160 w1
+waituntil globalRenderFrame == 15 900 w1
+screenshot shots/g5_far.ppm

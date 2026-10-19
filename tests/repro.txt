@@ -1,0 +1,20 @@
+symbols catacombs.noi
+
+echo boot
+run 120
+expect gameState == 0 w1
+
+echo press button 1 like a player would
+hold 1
+run 200
+hold none
+waituntil gameState == 1 1200 w1
+echo reached EnteringLevel
+print randState
+print menuState
+
+echo now wait a long time for the level to start (natural seed, no poke)
+waituntil gameState == 2 24000 w1
+print gameState w1
+print gameFloor w1
+screenshot shots/repro.ppm

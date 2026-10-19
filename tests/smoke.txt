@@ -1,0 +1,12 @@
+symbols catacombs.noi
+run 120
+expect gameState == 0 w1
+hold 1
+waituntil gameState == 1 600 w1
+hold none
+waituntil gameState == 2 6000 w1
+expect gameFloor == 1 w1
+print frameCounter
+run 300
+print frameCounter
+screenshot build/ingame.ppm

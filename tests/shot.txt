@@ -1,0 +1,14 @@
+symbols catacombs.noi
+run 60
+hold 1
+waituntil gameState == 1 900 w1
+hold none
+poke randState 4919
+waituntil gameState == 2 9000 w1
+run 400
+screenshot build/ingame.ppm
+hold up
+run 1500
+hold none
+run 400
+screenshot build/ingame2.ppm
